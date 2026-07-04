@@ -1,0 +1,15 @@
+- Task 4:
+4.2:
+BIKE_MODEL: .rodata --> Vì đây là một chuỗi cố định (const char)
+total_odometer: .bss --> Vì đây là biến toàn cục khởi tạo bằng 0.
+current_speed: Stack --> Vì đây là biến cục bộ
+4.3:
+Khi kích hoạt hàm crash_simulation, việc gọi đệ quy vô hạn làm cạn kiệt vùng nhớ Stack, dẫn đến lỗi tràn ngăn xếp (Stack Overflow).
+_Nếu chạy file thực thi thì hệ điều hành sẽ ép dừng chương trình, không in ra lỗi nào.
+_Nếu Debug thì sẽ thông báo lỗi "Segmentation fault" ngay tại dòng lệnh gọi đệ quy.
+Nếu đoạn mã này chạy trên một vi điều khiển thực tế, Stack bị tràn và ghi đè lên các vùng dữ liệu khác, làm hỏng địa chỉ phản hồi.
+CPU khi truy cập vào địa chỉ bị lỗi sẽ nhảy vào hàm ngắt ngoại lệ HardFault_Handler để xử lý sự cố.
+- Task 5:
+Cách 1 là cách khai báo thỏa mãn.
+Giải thích: Vì phân vùng .bss chỉ tốn dung lượng Ram còn phân vùng .data tốn dung lượng cả Ram và Flash. Do đó mảng được khai báo theo cách 1 
+thì sẽ được xếp vào phân vùng .bss nên không tốn dung lượng của Flash còn khai báo theo cách 2 sẽ được xếp vào phân vùng .data gây quá tải dung lượng bộ nhớ Flash.
