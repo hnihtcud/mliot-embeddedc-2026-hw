@@ -1,0 +1,26 @@
+**Task 5 em làm theo cách 2 ạ.
+Link video: https://www.youtube.com/watch?v=mP10ZzdfENo
+
+**Task 1:
+- 1.1:
+Cấu hình chân ở mức logic 1 thì transistor PMOS dẫn và transistor NMOS ngắt.
+Cấu hình chân ở mức logic 0 thì transistor PMOS ngắt và transistor NMOS dẫn.
+- 1.2:
+_Ta cần cấu hình một chân GPIO ở chế độ Input Pull-up khi:
+     +Nút bấm cơ học khi ấn sẽ về mức 0, còn không ấn sẽ giữ mức 1.
+     +Quét ma trận phím
+     +Đọc Rotary Encoder
+     +Cảm biến có đầu ra Open-Collector
+_Hiện tượng sẽ xảy ra là giá trị đọc được từ thanh ghi dữ liệu đầu vào sẽ nhảy loạn xạ ngẫu nhiên giữa 0 và 1 (không thể dự đoán trước) do:
+     +Hiệu ứng ăng ten: hấp thụ mọi nhiễu điện từ, tĩnh điện từ môi trường hoặc nhiễu chéo từ các đường mạch xung quanh.
+     +Dao động quanh ngưỡng logic: Các dòng điện cảm ứng vi mô này khiến điện áp trên chân GPIO trôi dạt liên tục qua lại giữa ngưỡng logic cao và thấp, 
+làm bộ đệm đầu vào liên tục lật trạng thái bit trong thanh ghi.
+
+**Task 2:
+- Nhà sản xuất chip (ST) lại mặc định tắt toàn bộ Clock của ngoại vi khi vừa reset chip vì nó giúp tối ưu hóa tài nguyên ứng dụng và điện năng tiêu thụ: 
+Hầu hết các hệ thống nhúng chỉ sử dụng một phần nhỏ ngoại vi có trên chip. Tắt toàn bộ Clock cho phép lập trình viên chủ động cấp nguồn xung nhịp cho những ngoại vi 
+thực sự cần thiết, ngăn ngừa nhiễu nội bộ, tối ưu lượng điện tiêu thụ và đảm bảo độ ổn định cho hệ thống.
+- Nếu cấu hình các thanh ghi chức năng của GPIO mà quên bật Clock cho Port đó thì:
+     +Đọc thanh ghi trả về giá trị sai lệch: nếu không có clock, giá trị trong thanh ghi vẫn giữ nguyên trạng thái mặc định ban đầu sau khi Reset.
+     +Ghi vào thanh ghi bị bỏ qua: CPU sẽ không lấy được trạng thái điện áp thực tế của chân pin mà thường chỉ nhận được giá trị 0x00000000 hoặc dữ liệu rác.
+     +Ngoại vi không hoạt động: khi CPU truy cập vào vùng nhớ của ngoại vi chưa được cấp xung nhịp gây ra lỗi Bus Fault hoặc Hard Fault.
