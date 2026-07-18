@@ -44,21 +44,35 @@ target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
 )
 
 # 2. GOM TOÀN BỘ FILE SOURCE CẦN THIẾT VÀO DUY NHẤT MỘT CHỖ NÀY
-target_sources(${PROJECT_NAME} PRIVATE
-    main.c
-    startup_stm32f103xb.s       # File Assembly khởi động chip (BẮT BUỘC)
-    system_stm32f1xx.c          # File khởi tạo bảng clock hệ thống (BẮT BUỘC)
-    stm32f1xx_hal.c             # Thư viện lõi HAL
-    stm32f1xx_hal_gpio.c        # Driver điều khiển chân GPIO (cho LED)
-    stm32f1xx_hal_rcc.c
-    stm32f1xx_hal_cortex.c
+file(GLOB_RECURSE PROJECT_SOURCES 
+    "Core/*.c"
+    "Core/*.s"
+    "Core/*.S"
+    "Driver/*.c"
 )
+list(FILTER PROJECT_SOURCES EXCLUDE REGEX ".*_template\\.c$|.*_example\\.c$")
+# Thêm toàn bộ file tìm được vào target
+target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES})
+
 
 # 3. KHAI BÁO THƯ MỤC CHỨA FILE HEADER (.h)
 # Dấu chấm (.) đại diện cho thư mục hiện tại. 
 # Nếu các file .h của HAL bạn để trong folder Inc hoặc Drivers thì thêm dòng tên folder đó vào dưới dấu chấm.
-target_include_directories(${PROJECT_NAME} PRIVATE 
-    .
+target_include_directories(${PROJECT_NAME} PRIVATE
+    Core/Inc
+    Core/Include
+    Core/Src
+    
+    # Thư mục HAL Driver (Bạn đã thêm)
+    Driver/STM32F1xx_HAL_Driver/Inc
+    Driver/STM32F1xx_HAL_Driver/Inc/Legacy
+    
+    # --- BỔ SUNG 2 DÒNG NÀY (Để tìm thấy stm32f1xx.h và core_cm3.h) ---
+    Driver/CMSIS/Device/ST/STM32F1xx/Include
+    Driver/CMSIS/Include
+    
+    Driver/Inc
+    Driver/Include
 )
 
 # Post-build commands to generate hex and bin files
