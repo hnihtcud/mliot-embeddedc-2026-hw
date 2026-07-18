@@ -1,0 +1,51 @@
+**Task 1:
+- 1.1: 
+CMake: Là một bộ sinh cấu hình, đọc file cấu hình dự án (CMakeLists.txt) rồi tạo file cho công cụ build là Ninja.
+Ninja: Là trình điều phối build, tối ưu hóa việc build tăng dần. Nó đọc file do CMake sinh ra để xem file nào bị thay đổi và kích hoạt trình biên dịch chạy song song
+Compiler (arm-none-eabi-gcc): Là trình biên dịch chéo, dịch mã nguồn của C thành mã máy (các file .elf, .bin, .hex) hiểu được bởi chip ARM Cortex-M.
+STM32_Programmer_CLI: Là trình giao tiếp phần cứng. Nó có nhiệm vụ kết nối với bo mạch, nạp file vừa được biên dịch vào bộ nhớ Flash của chip STM32
+và reset để chip bắt đầu chạy
+- 1.2: Trình tự làm việc:
+Bước 1 (CMake): Được chạy đầu tiên để phân tích và tạo file cấu hình chi tiết (file .ninja) là đầu vào cho Ninja.
+Bước 2 (Ninja): Đọc file build.ninja, kiểm tra mã nguồn thay đổi và điều phối gọi Compiler.
+Bước 3 (Compiler): Được Ninja kích hoạt để biên dịch file code C thành file thực thi nhị nhân (.elf).
+Bước 4 (STM32_Programmer_CLI): Chạy cuối cùng, lấy file nhị phân vừa tạo ở Bước 3 nạp xuống mạch STM32 Blue Pill để firmware chính thức hoạt động.
+
+**Task 2:
+- 2.1:
+_Ta chưa thể nạp ngay các file .o này xuống chip mà bắt buộc phải cần đến công cụ Linker vì những file .o này là những file rời rạc được biên dịch từ file .c, nó
+chỉ mang địa chỉ tương đối và chưa kết nối được với các hàm được gọi trong file .c khác hoặc trong thư viện. Do đó, Công cụ Linker sẽ gom tất cả các file .o và 
+thư viện lại với nhau, giải quyết các tham chiếu hàm, rồi dựa theo cấu hình của Linker Script để gán địa chỉ bộ nhớ tuyệt đối cho chúng, từ đó tạo ra file thực thi 
+hoàn chỉnh (.elf).
+_Khác biệt cốt lõi .o vs .bin:
++File .o: Chưa hoàn chỉnh, chứa mã máy kèm rất nhiều metadata (bảng ký hiệu, thông tin debug, chỉ dẫn cho Linker)nên vi điều khiển không thể đọc hiểu hay thực thi.
++File .bin : File mã máy hoàn chỉnh, đã được tước bỏ toàn bộ metadata, các địa chỉ tạm đã thành địa chỉ vật lý tuyệt đối nên có thể nạp thẳng vào vi điều khiển.
+- 2.2:
+_Vai trò là tiết kiệm thời gian, thay vì phải biên dịch lại toàn bộ file trong dự án thì Ninja chỉ gọi compiler dịch đúng file vừa thay đổi.
+_Cơ chế nhận biết file bị sửa đổi:
++So sánh nhãn thời gian: Ninja kiểm tra thời gian chỉnh sửa. Nếu file nguồn (.c) có thời gian chỉnh sửa mới hơn file kết quả (.o), 
+Ninja kết luận file đã bị sửa và cho dịch lại.
++Theo dõi cây phụ thuộc Header: Nhờ file ánh xạ phụ thuộc do Compiler sinh ra, Ninja biết chính xác file .c nào đang #include file .h nào. 
+Khi sửa một file .h, Ninja sẽ chỉ dịch lại đúng những file .c có nhúng file .h đó, bỏ qua các file không liên quan.
+
+**Task 3:
+- 3.1:
+_Sự khác biệt giữa LMA và VMA:
++LMA (Load Memory Address): Địa chỉ vật lý nằm trong bộ nhớ Flash là _sidata, được sử dụng để lưu những giá trị được khởi tạo ban đầu của biến.
++VMA (Virtual/Runtime Memory Address): Đây là địa chỉ thực thi nằm trong bộ nhớ RAM, được CPU truy xuất và thao tác liên tục trong suốt quá trình chạy. _sdata = .; 
+và _edata = .; lần lượt đánh dấu địa chỉ bắt đầu và kết thúc của vùng .data bên trong RAM.
+_Phân vùng này cần phải có cả 2 loại địa chỉ vì:
++Chống mất dữ liệu khi mất điện: RAM sẽ mất sạch dữ liệu khi tắt nguồn, do đó giá trị khởi tạo ban đầu bắt buộc phải được lưu cố định ở Flash.
++Tốc độ và quyền ghi đè: Flash có tốc độ truy xuất chậm và không thể ghi đè tự do theo từng byte trong runtime. Vì vậy, biến cần được đưa 
+lên RAM để CPU có thể đọc/write nhanh chóng và liên tục.
+- 3.2: 
+Hệ quả khi Startup Code (Reset_Handler) quên sao chép dữ liệu:
++Biến toàn cục chứa "giá trị rác": Khi vào main(), CPU đọc biến tại địa chỉ RAM. Do chưa được sao chép từ Flash sang, vùng RAM này chỉ chứa các bit ngẫu nhiên.
++Lỗi logic & Crash hệ thống: Các biến máy trạng thái, cờ điều khiển bị sai giá trị làm logic chạy lệch lạc. Nếu biến là con trỏ, việc trỏ đến địa chỉ rác sẽ 
+lập tức gây ngắt HardFault_Handler.
+
+**Task 4:
+- 4.1:
+cmake -B build -G "Ninja"
+- 4.2:
+ninja -C build
